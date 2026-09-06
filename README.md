@@ -17,7 +17,6 @@
 | `dishes.json` | 菜名数据，含添加人与时间（首次运行自动创建） |
 | `users.json` | 用户数据（PBKDF2 加盐哈希，不存明文密码；`role` 字段区分管理员） |
 | `eatwhat.service` | systemd 服务单元（Debian 服务器用） |
-| `start.command` | macOS 本地调试用，双击启动 |
 
 ## 账号
 
