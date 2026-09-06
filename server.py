@@ -167,6 +167,18 @@ class Handler(BaseHTTPRequestHandler):
             info = load_users().get(user) or {}
         return user, info.get("role") == "admin"
 
+    def do_HEAD(self):
+        # Cloudflare 等代理/健康检查会发 HEAD 请求，按 GET 的路由返回空响应体
+        path = urlparse(self.path).path
+        if path in ("/", "/index.html", "/admin"):
+            self.send_response(200)
+        else:
+            self.send_response(404)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", "0")
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+
     def do_GET(self):
         path = urlparse(self.path).path
         if path in ("/", "/index.html"):
