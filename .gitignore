@@ -1,0 +1,10 @@
+# 运行数据（首次运行自动创建，不进版本库）
+dishes.json
+users.json
+settings.json
+
+# 系统 / 临时文件
+__pycache__/
+*.pyc
+.DS_Store
+server.log

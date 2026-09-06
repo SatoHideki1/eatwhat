@@ -66,22 +66,24 @@ EOF
 
 ## 部署到 Debian 服务器
 
-在**本机**执行（把 `user` 和 `服务器IP` 换成你的）：
+在**服务器上**执行（需要已安装 `git` 和 `python3`，Debian 一般都自带）：
 
 ```bash
-# 1. 上传文件到服务器
-ssh user@服务器IP 'sudo mkdir -p /opt/eatwhat && sudo chown $USER /opt/eatwhat'
-scp server.py index.html eatwhat.service user@服务器IP:/opt/eatwhat/
-# 如果本地已有菜名想保留，把 dishes.json 也一起传上去
+# 1. 克隆代码
+git clone https://github.com/SatoHideki1/eatwhat.git /opt/eatwhat
+cd /opt/eatwhat
 
-# 2. 在服务器上安装并启动服务
-ssh user@服务器IP
-sudo cp /opt/eatwhat/eatwhat.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now eatwhat
+# 2. 安装并启动服务
+cp eatwhat.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now eatwhat
 ```
 
 然后访问 `http://服务器IP:8787` 确认服务正常，把这个地址（或你自己绑定的域名）发给朋友即可。
+
+**创建管理员账号**：见上文「后台管理」一节的脚本（首次部署后需要运行一次，否则没有管理员）。
+
+**从旧版（手动 scp 部署）迁移**：旧目录里的 `dishes.json` / `users.json` 是数据文件，先备份；按上面方式克隆到新目录（或直接在旧目录 `git init` 并关联远端后 `git fetch`），把数据文件复制回来，重启服务即可。
 
 **如果开了防火墙**（如 ufw），记得放行端口：
 
@@ -98,8 +100,8 @@ sudo systemctl stop eatwhat      # 停止
 journalctl -u eatwhat -f         # 实时日志
 ```
 
-**更新代码**：重新 `scp server.py index.html` 上传后 `sudo systemctl restart eatwhat`。
-`dishes.json` 和 `users.json` 不会被覆盖，菜名和账号一直保留；备份这两个文件就是备份全部数据。
+**更新代码**：`cd /opt/eatwhat && git pull && systemctl restart eatwhat`。
+`dishes.json` 和 `users.json` 在 `.gitignore` 里，`git pull` 永远不会覆盖它们，菜名和账号一直保留；备份这两个文件就是备份全部数据。
 
 **换端口**：编辑 `/etc/systemd/system/eatwhat.service` 里 `ExecStart` 末尾的 `8787`，
 然后 `sudo systemctl daemon-reload && sudo systemctl restart eatwhat`。
