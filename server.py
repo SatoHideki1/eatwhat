@@ -148,10 +148,10 @@ class Handler(BaseHTTPRequestHandler):
             return None
         return sessions.get(morsel.value)
 
-    def _serve_file(self, filename):
+    def _serve_file(self, filename, content_type="text/html; charset=utf-8"):
         try:
             with open(os.path.join(BASE_DIR, filename), "rb") as f:
-                self._send(200, f.read(), "text/html; charset=utf-8")
+                self._send(200, f.read(), content_type)
         except OSError:
             self._json(404, {"error": filename + " not found"})
 
@@ -170,7 +170,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_HEAD(self):
         # Cloudflare 等代理/健康检查会发 HEAD 请求，按 GET 的路由返回空响应体
         path = urlparse(self.path).path
-        if path in ("/", "/index.html", "/admin"):
+        if path in ("/", "/index.html", "/admin", "/favicon.ico", "/favicon.png",
+                    "/apple-touch-icon.png"):
             self.send_response(200)
         else:
             self.send_response(404)
@@ -181,7 +182,11 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = urlparse(self.path).path
-        if path in ("/", "/index.html"):
+        if path in ("/favicon.ico", "/favicon.png"):
+            self._serve_file("favicon.png", "image/png")
+        elif path == "/apple-touch-icon.png":
+            self._serve_file("apple-touch-icon.png", "image/png")
+        elif path in ("/", "/index.html"):
             self._serve_index()
         elif path == "/api/me":
             user, is_admin = self._current_role()
