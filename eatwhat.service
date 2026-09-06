@@ -1,0 +1,14 @@
+[Unit]
+Description=今天吃什么？共享菜名服务器
+After=network.target
+
+[Service]
+Type=simple
+# 如需换端口，改这里最后的 8787 即可
+ExecStart=/usr/bin/python3 /opt/eatwhat/server.py 8787
+WorkingDirectory=/opt/eatwhat
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

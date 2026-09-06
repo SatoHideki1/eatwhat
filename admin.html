@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>后台管理 · 今天吃什么？</title>
+<style>
+  :root {
+    --accent: #f97316;
+    --accent-dark: #ea580c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+      "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    background: linear-gradient(135deg, #fff7ed, #ffedd5 45%, #fce7f3);
+    color: #1f2937;
+  }
+  .card {
+    width: 100%;
+    max-width: 860px;
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 32px 30px;
+    box-shadow: 0 24px 60px rgba(234, 88, 12, 0.12);
+  }
+  .user-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #9ca3af;
+    margin-bottom: 8px;
+  }
+  .user-bar .left, .user-bar .right { display: flex; align-items: center; gap: 10px; }
+  .user-bar a { color: #b45309; text-decoration: underline; }
+  #logout-btn {
+    border: none;
+    background: transparent;
+    color: #ef4444;
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+  }
+  h1 {
+    text-align: center;
+    font-size: 2rem;
+    letter-spacing: 0.05em;
+    background: linear-gradient(90deg, #f97316, #ef4444);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+  .subtitle {
+    text-align: center;
+    color: #9ca3af;
+    margin: 8px 0 20px;
+    font-size: 0.95rem;
+  }
+  .stats {
+    text-align: center;
+    color: #b45309;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    border-radius: 12px;
+    padding: 10px;
+    font-size: 0.95rem;
+    margin-bottom: 20px;
+  }
+  .setting-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.95rem;
+  }
+  .setting-label { color: #7c2d12; }
+  .reg-state { font-size: 0.85rem; }
+  .reg-state.open { color: #16a34a; }
+  .reg-state.closed { color: #b91c1c; }
+  .switch { position: relative; display: inline-block; width: 46px; height: 26px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .slider {
+    position: absolute;
+    inset: 0;
+    background: #d1d5db;
+    border-radius: 999px;
+    transition: background 0.2s;
+    cursor: pointer;
+  }
+  .switch .slider::before {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    top: 3px;
+    left: 3px;
+    transition: left 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+  .switch input:checked + .slider { background: #22c55e; }
+  .switch input:checked + .slider::before { left: 23px; }
+  .switch input:disabled + .slider { opacity: 0.6; cursor: wait; }
+  .panel {
+    background: #fffaf3;
+    border: 1px solid #ffedd5;
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 20px;
+  }
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .panel-title { font-size: 1.02rem; font-weight: 700; color: #b45309; }
+  #filter {
+    padding: 6px 10px;
+    font-size: 0.9rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    outline: none;
+    color: #7c2d12;
+  }
+  .tbl { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  .tbl th, .tbl td { text-align: left; padding: 9px 6px; border-bottom: 1px solid #ffedd5; }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl th { color: #b45309; font-weight: 600; }
+  .tbl .muted { color: #d1d5db; font-size: 0.85rem; }
+  .tbl button.danger {
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    color: #b91c1c;
+    border-radius: 8px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+  .tbl button.danger:hover { background: #fee2e2; }
+  .tbl button.promote {
+    border: 1px solid #fed7aa;
+    background: #fff7ed;
+    color: #b45309;
+    border-radius: 8px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+  .tbl button.promote:hover { background: #ffedd5; }
+  .op-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .empty { text-align: center; color: #d1d5db; padding: 16px 0; font-size: 0.9rem; }
+  .footer {
+    text-align: center;
+    font-size: 0.75rem;
+    color: #d1d5db;
+  }
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(31, 41, 55, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 16px;
+  }
+  .modal-card {
+    width: 100%;
+    max-width: 380px;
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+  }
+  .modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .modal-close {
+    border: none;
+    background: transparent;
+    font-size: 1.1rem;
+    color: #9ca3af;
+    cursor: pointer;
+  }
+  .modal-close:hover { color: #ef4444; }
+  .account-info { font-size: 0.9rem; color: #6b7280; margin-bottom: 14px; }
+  .pw-msg { font-size: 0.85rem; border-radius: 8px; padding: 6px 10px; }
+  .pw-msg.err { color: #b91c1c; background: #fef2f2; border: 1px solid #fecaca; }
+  .pw-msg.ok { color: #15803d; background: #f0fdf4; border: 1px solid #bbf7d0; }
+  #pw-reset-form { display: flex; flex-direction: column; gap: 10px; }
+  #pw-reset-input {
+    padding: 10px 14px;
+    font-size: 0.95rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  #pw-reset-input:focus {
+    border-color: var(--accent, #f97316);
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.15);
+  }
+  .auth-btn {
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #fb923c, #ef4444);
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .auth-btn:active { transform: scale(0.98); }
+  @media (max-width: 560px) {
+    .card { padding: 24px 16px; }
+    .tbl th:nth-child(2), .tbl td:nth-child(2),
+    .tbl th:nth-child(3), .tbl td:nth-child(3) { display: none; }
+  }
+</style>
+</head>
+<body>
+<main class="card">
+  <div class="user-bar">
+    <div class="left"><a href="/">← 返回前台</a></div>
+    <div class="right"><span>你好，<b id="me-name"></b></span><button id="logout-btn" type="button">退出</button></div>
+  </div>
+  <h1>后台管理</h1>
+  <p class="subtitle">查看和管理注册用户与大家添加的菜品</p>
+
+  <p class="stats" id="stats">加载中…</p>
+
+  <section class="panel">
+    <div class="panel-head"><h2 class="panel-title">系统设置</h2></div>
+    <div class="setting-row">
+      <span class="setting-label">开放新用户注册</span>
+      <label class="switch">
+        <input type="checkbox" id="reg-toggle" />
+        <span class="slider"></span>
+      </label>
+      <span id="reg-state" class="reg-state"></span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2 class="panel-title">注册用户</h2></div>
+    <table class="tbl" id="users-tbl">
+      <thead>
+        <tr><th>用户名</th><th>注册时间</th><th>添加菜数</th><th>操作</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2 class="panel-title">菜品</h2>
+      <select id="filter" aria-label="按用户筛选"><option value="">全部用户</option></select>
+    </div>
+    <table class="tbl" id="dishes-tbl">
+      <thead>
+        <tr><th>菜名</th><th>添加人</th><th>添加时间</th><th>操作</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <p class="footer">数据实时来自服务器 · 每 5 秒自动刷新</p>
+</main>
+
+<div id="pw-reset-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2 class="panel-title">重置密码</h2>
+      <button type="button" id="pw-reset-close" class="modal-close" aria-label="关闭">✕</button>
+    </div>
+    <p class="account-info">为用户 <b id="pw-reset-name"></b> 设置新密码（对方若在线，需用新密码重新登录）：</p>
+    <form id="pw-reset-form">
+      <input id="pw-reset-input" type="text" placeholder="新密码（至少 4 位）" maxlength="64" autocomplete="off" />
+      <p id="pw-reset-msg" class="pw-msg" hidden></p>
+      <button type="submit" class="auth-btn">保存新密码</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  let me = null;
+
+  async function api(path, options = {}) {
+    const res = await fetch(path, options);
+    if (res.status === 401 || res.status === 403) {
+      location.href = '/';   // 未登录或非管理员，回前台
+      throw new Error('denied');
+    }
+    if (!res.ok) {
+      let msg = 'HTTP ' + res.status;
+      try { const j = await res.json(); if (j && j.error) msg = j.error; } catch {}
+      throw new Error(msg);
+    }
+    return res.json();
+  }
+
+  function td(text, cls) {
+    const t = document.createElement('td');
+    if (cls) t.className = cls;
+    t.textContent = text;
+    return t;
+  }
+  function fmt(ts) { return ts ? new Date(ts * 1000).toLocaleString('zh-CN') : '—'; }
+
+  function dangerBtn(text, onConfirm) {
+    return opBtn(text, 'danger', onConfirm);
+  }
+
+  /* 重置密码弹窗 */
+  const pwResetModal = $('pw-reset-modal');
+  const pwResetInput = $('pw-reset-input');
+  const pwResetMsg = $('pw-reset-msg');
+  const pwResetForm = $('pw-reset-form');
+  let pwResetTarget = null;
+
+  function openPwReset(name) {
+    pwResetTarget = name;
+    $('pw-reset-name').textContent = name;
+    pwResetInput.value = '';
+    pwResetMsg.hidden = true;
+    pwResetModal.hidden = false;
+    pwResetInput.focus();
+  }
+
+  $('pw-reset-close').addEventListener('click', () => { pwResetModal.hidden = true; });
+  pwResetModal.addEventListener('click', e => {
+    if (e.target === pwResetModal) pwResetModal.hidden = true;
+  });
+
+  pwResetForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const newPw = pwResetInput.value;
+    if (newPw.length < 4) {
+      pwResetMsg.textContent = '新密码至少 4 位';
+      pwResetMsg.className = 'pw-msg err';
+      pwResetMsg.hidden = false;
+      return;
+    }
+    try {
+      await api('/api/admin/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: pwResetTarget, newPassword: newPw }),
+      });
+      pwResetMsg.textContent = '已重置，请把新密码告知该用户';
+      pwResetMsg.className = 'pw-msg ok';
+      pwResetMsg.hidden = false;
+      pwResetInput.value = '';
+      setTimeout(() => { pwResetModal.hidden = true; }, 900);
+    } catch (err) {
+      if (err.message === 'denied') return;
+      pwResetMsg.textContent = err.message;
+      pwResetMsg.className = 'pw-msg err';
+      pwResetMsg.hidden = false;
+    }
+  });
+
+  function opBtn(text, cls, onConfirm) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = cls;
+    btn.textContent = text;
+    btn.addEventListener('click', onConfirm);
+    return btn;
+  }
+
+  async function refresh() {
+    let data;
+    try {
+      data = await api('/api/admin/overview');
+    } catch (e) {
+      if (e.message !== 'denied') $('stats').textContent = '加载失败：' + e.message;
+      return;
+    }
+
+    $('stats').textContent =
+      `共 ${data.users.length} 个用户 · ${data.dishes.length} 道菜（版本 ${data.rev}）`;
+
+    /* 注册开关状态 */
+    const regOpen = !!data.registrationOpen;
+    regToggle.checked = regOpen;
+    regState.textContent = regOpen ? '开放中：新用户可自行注册' : '已关闭：仅限已注册用户登录';
+    regState.className = 'reg-state ' + (regOpen ? 'open' : 'closed');
+
+    /* 用户表 */
+    const ub = $('users-tbl').querySelector('tbody');
+    ub.innerHTML = '';
+    if (data.users.length === 0) {
+      ub.innerHTML = '<tr><td colspan="4" class="empty">还没有用户注册</td></tr>';
+    }
+    data.users.forEach(u => {
+      const tr = document.createElement('tr');
+      tr.append(
+        td(u.role === 'admin' ? u.name + '（管理员）' : u.name),
+        td(fmt(u.created)),
+        td(String(u.dishCount))
+      );
+      const op = document.createElement('td');
+      const opGroup = document.createElement('div');
+      opGroup.className = 'op-group';
+      op.appendChild(opGroup);
+
+      if (u.name === me) {
+        // 自己：不能改自己的角色，也不能删自己
+        const selfMark = document.createElement('span');
+        selfMark.textContent = '当前登录';
+        selfMark.className = 'muted';
+        opGroup.appendChild(selfMark);
+      } else if (u.role === 'admin') {
+        opGroup.appendChild(opBtn('重置密码', 'promote', () => openPwReset(u.name)));
+        opGroup.appendChild(opBtn('取消管理员', 'promote', async () => {
+          if (!confirm(`取消「${u.name}」的管理员权限？`)) return;
+          try {
+            await api('/api/admin/role', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: u.name, admin: false }),
+            });
+            refresh();
+          } catch (e) { alert(e.message); }
+        }));
+      } else {
+        opGroup.appendChild(opBtn('重置密码', 'promote', () => openPwReset(u.name)));
+        opGroup.appendChild(opBtn('设为管理员', 'promote', async () => {
+          if (!confirm(`将「${u.name}」设为管理员？该用户将可以进入后台管理。`)) return;
+          try {
+            await api('/api/admin/role', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: u.name, admin: true }),
+            });
+            refresh();
+          } catch (e) { alert(e.message); }
+        }));
+        opGroup.appendChild(dangerBtn('删除用户', async () => {
+          if (!confirm(`删除用户「${u.name}」？\n该用户添加的 ${u.dishCount} 道菜也会一并删除。`)) return;
+          try { await api('/api/admin/users/' + encodeURIComponent(u.name), { method: 'DELETE' }); refresh(); }
+          catch (e) { alert(e.message); }
+        }));
+      }
+      tr.appendChild(op);
+      ub.appendChild(tr);
+    });
+
+    /* 筛选下拉（保留当前选择） */
+    const filter = $('filter');
+    const cur = filter.value;
+    filter.innerHTML = '<option value="">全部用户</option>';
+    data.users.forEach(u => {
+      if (u.role === 'admin') return;
+      const opt = document.createElement('option');
+      opt.value = u.name;
+      opt.textContent = u.name;
+      filter.appendChild(opt);
+    });
+    filter.value = [...filter.options].some(o => o.value === cur) ? cur : '';
+
+    /* 菜品表 */
+    const list = data.dishes.filter(d => !filter.value || d.by === filter.value);
+    const db = $('dishes-tbl').querySelector('tbody');
+    db.innerHTML = '';
+    if (list.length === 0) {
+      db.innerHTML = '<tr><td colspan="4" class="empty">没有符合条件的菜品</td></tr>';
+    }
+    list.forEach(d => {
+      const tr = document.createElement('tr');
+      tr.append(td(d.name), td(d.by || '早期数据'), td(fmt(d.at)));
+      const op = document.createElement('td');
+      op.appendChild(dangerBtn('删除菜品', async () => {
+        if (!confirm(`删除菜品「${d.name}」？`)) return;
+        try { await api('/api/admin/dishes/' + encodeURIComponent(d.name), { method: 'DELETE' }); refresh(); }
+        catch (e) { alert(e.message); }
+      }));
+      tr.appendChild(op);
+      db.appendChild(tr);
+    });
+  }
+
+  const regToggle = $('reg-toggle');
+  const regState = $('reg-state');
+
+  regToggle.addEventListener('change', async () => {
+    const open = regToggle.checked;
+    regToggle.disabled = true;
+    try {
+      await api('/api/admin/registration', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ open }),
+      });
+    } catch (e) {
+      if (e.message !== 'denied') alert('保存失败：' + e.message);
+    }
+    regToggle.disabled = false;
+    refresh();  // 以服务器返回的实际状态为准
+  });
+
+  $('filter').addEventListener('change', refresh);
+  $('logout-btn').addEventListener('click', async () => {
+    try { await fetch('/api/logout', { method: 'POST' }); } catch {}
+    location.href = '/';
+  });
+
+  /* 入口：确认当前登录者是管理员，否则回前台 */
+  (async function init() {
+    try {
+      const d = await api('/api/me');
+      if (!d.user || d.role !== 'admin') { location.href = '/'; return; }
+      me = d.user;
+      $('me-name').textContent = d.user;
+      refresh();
+      setInterval(refresh, 5000);
+    } catch {
+      location.href = '/';
+    }
+  })();
+</script>
+</body>
+</html>
