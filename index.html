@@ -445,7 +445,9 @@
     font-size: 2rem;
     font-weight: 700;
     color: #ea580c;
+    overflow-wrap: anywhere;
   }
+  .result.small .result-name { font-size: 1.35rem; line-height: 1.6; }
   .result.pop { animation: pop 0.4s ease; }
   @keyframes pop {
     0%   { transform: scale(0.9); }
@@ -923,15 +925,19 @@
     pickBtn.disabled = true;
     pickBtn.textContent = '🎯 正在挑选…';
     resultEl.hidden = false;
+    resultEl.classList.toggle('small', count > 2);  // 数量多时用小字号，避免溢出
     resultLabel.textContent = count > 1 ? `正在为你挑选 ${count} 道…` : '正在为你挑选…';
     const rounds = 22;
     let i = 0;
     const timer = setInterval(() => {
-      resultName.textContent = pool[Math.floor(Math.random() * pool.length)].name;
+      // 滚动展示与抽取数量一致的随机菜名
+      resultName.textContent = sampleDishes(pool, Math.min(count, pool.length))
+        .map(d => d.name).join('、');
       if (++i >= rounds) {
         clearInterval(timer);
         const winners = sampleDishes(pool, count);
         resultName.textContent = winners.map(d => d.name).join('、');
+        resultEl.classList.toggle('small', winners.length > 2);
         resultLabel.textContent = selectMode
           ? (count > 1 ? `从你选的 ${pool.length} 道里挑了 ${winners.length} 道` : '从你选的菜里挑中了')
           : (count > 1 ? `今天吃这 ${winners.length} 道` : '今天吃');
